@@ -1,0 +1,1 @@
+In this folder the scripts will dump their raw and processed outputs.

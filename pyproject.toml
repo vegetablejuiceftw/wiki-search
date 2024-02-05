@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "wiki-search"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+requests = "^2.31.0"
+tqdm = "^4.66.1"
+gitpython = "^3.1.41"
+numpy = "^1.26.3"
+torch = {version = "^2.1.2+cu118", source = "pytorch-legacy"}
+sentence-transformers = "^2.2.2"
+tensorflow-hub = "^0.16.0"
+tensorflow = "<2.15"
+pandas = "^2.2.0"
+pydantic = "^2.6.0"
+
+
+[[tool.poetry.source]]
+name = "pytorch-legacy"
+url = "https://download.pytorch.org/whl/cu118"
+priority = "explicit"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
