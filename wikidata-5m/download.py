@@ -7,6 +7,7 @@ import tarfile
 from tqdm import tqdm
 import requests
 
+from diskstorage import DiskSearch
 from utils import reset_working_directory
 
 
@@ -25,21 +26,23 @@ def download(url, force=False):
                     handle.write(data)
 
 
-def iter_data(file_name):
-    total_size = os.path.getsize(file_name)
-
-    with tqdm(total=total_size, unit="B", unit_scale=True, desc="emb", smoothing=0.1, maxinterval=0.5) as progress_bar:
-        old = 0
-        if file_name.endswith('.tar.gz'):
-            with tarfile.open(file_name, 'r') as file:
-                stream = file.extractfile("wikidata5m_entity.txt")
+def iter_data(file_name, key="wikidata5m_entity.txt"):
+    if file_name.endswith('.tar.gz'):
+        with tarfile.open(file_name, 'r') as file:
+            stream = file.extractfile(key)
+            total_size, old = stream.tell(), 0
+            with tqdm(total=total_size, unit="B", unit_scale=True, desc="emb", smoothing=0.1,
+                      maxinterval=0.5) as progress_bar:
                 for line in stream:
-                    new_start_pos = file.fileobj.tell()
+                    new_start_pos = stream.tell()
                     progress_bar.update(new_start_pos - old)
                     old = new_start_pos
                     yield tuple(r.strip() for r in line.decode('utf-8').split("\t"))
-        else:
-            with gzip.open(file_name, 'rb') as file:
+    else:
+        with gzip.open(file_name, 'rb') as file:
+            total_size, old = os.path.getsize(file_name), 0
+            with tqdm(total=total_size, unit="B", unit_scale=True, desc="emb", smoothing=0.1,
+                      maxinterval=0.5) as progress_bar:
                 stream = file
                 for line in stream:
                     new_start_pos = file.fileobj.tell()
@@ -52,10 +55,9 @@ if __name__ == '__main__':
     reset_working_directory()
 
     # https://deepgraphlearning.github.io/project/wikidata5m
-    download("https://www.dropbox.com/s/lnbhc8yuhit4wm5/wikidata5m_alias.tar.gz?dl=1")
-    download("https://www.dropbox.com/s/7jp4ib8zo3i6m10/wikidata5m_text.txt.gz?dl=1")
+    # download("https://www.dropbox.com/s/lnbhc8yuhit4wm5/wikidata5m_alias.tar.gz?dl=1")
+    # download("https://www.dropbox.com/s/7jp4ib8zo3i6m10/wikidata5m_text.txt.gz?dl=1")
 
-    file_name = 'data/wikidata5m_text.txt.gz'
     # ('Q7594088', 'St Magnus the Martyr, London Bridge is a Church of England church and parish within the City of
     # London. The church, which is located in Lower Thames Street near The Monument to the Great Fire of London,
     # is part of the Diocese of London and under the pastoral care of the Bishop of Fulham. It is a Grade I listed
@@ -74,14 +76,38 @@ if __name__ == '__main__':
     # and gold". He added in a footnote that "the interior of St. Magnus Martyr is to my mind one of the finest among
     # Wren\'s interiors". One biographer of Eliot notes that at first he enjoyed St Magnus aesthetically for its
     # "splendour"; later he appreciated its "utility" when he came there as a sinner.')
-    iterator = iter_data(file_name)
-    for row in iterator:
-        print(row)
-        break
+    # iterator = iter_data('data/wikidata5m_text.txt.gz')
+    # for row in iterator:
+    #     print(row)
+    #     break
 
-    file_name = 'data/wikidata5m_alias.tar.gz'
     # ('Q5196650', 'Cut Your Hair', 'cut your hair')
-    iterator = iter_data(file_name)
-    for row in iterator:
-        print(row)
-        break
+    # iterator = iter_data('data/wikidata5m_alias.tar.gz')
+    # for row in iterator:
+    #     print(row)
+    #     break
+
+    alias_cache = DiskSearch('data/wikidata-5m-alias.cache')
+    dataset = DiskSearch('data/wikidata-5m-dataset.cache')
+    # alias_cache.write(((id, data) for id, *data in iter_data( 'data/wikidata5m_alias.tar.gz')))
+    # iterator = (
+    #     (
+    #         qid,
+    #         {
+    #             "id": qid,
+    #             "text": "\t".join(text),
+    #             "aliases": alias_cache.read(qid),
+    #         },
+    #     )
+    #     for qid, *text in iter_data('data/wikidata5m_text.txt.gz')
+    # )
+    # dataset.write(iterator)
+
+    dataset_aliases = DiskSearch('data/wikidata-5m-dataset.aliases.cache')
+    for key, data in tqdm(dataset.iter(), total=5_000_000):
+        for lookup in (data['aliases'] or []):
+            ids = dataset_aliases[lookup] or []
+            dataset_aliases[lookup] = tuple(set([*ids, key]))
+
+    print(dataset_aliases['Donald Trump'])
+    print(dataset_aliases['Estonia'])

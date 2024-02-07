@@ -127,22 +127,23 @@ class WikiSearch(BaseModel):
         return self.func.__name__
 
 
-from search_dataset import SEARCH_DATASET, evaluate
-import pandas as pd
+if __name__ == '__main__':
+    from search_dataset import SEARCH_DATASET, evaluate
+    import pandas as pd
 
-search_limit = 50
-dataset = SEARCH_DATASET[:]
-data = []
-data += evaluate(dataset, WikiSearch(search_limit=search_limit, func=search_wikipedia), search_limit)
-data += evaluate(dataset, WikiSearch(search_limit=search_limit, func=search_wikidata), search_limit)
-data += evaluate(dataset, WikiSearch(search_limit=search_limit, func=search_both), search_limit)
-data = pd.DataFrame.from_records(data)
-print(data.groupby('source').mean(numeric_only=True).reset_index().round(2))
+    search_limit = 50
+    dataset = SEARCH_DATASET[:]
+    data = []
+    data += evaluate(dataset, WikiSearch(search_limit=search_limit, func=search_wikipedia), search_limit)
+    data += evaluate(dataset, WikiSearch(search_limit=search_limit, func=search_wikidata), search_limit)
+    data += evaluate(dataset, WikiSearch(search_limit=search_limit, func=search_both), search_limit)
+    data = pd.DataFrame.from_records(data)
+    print(data.groupby('source').mean(numeric_only=True).reset_index().round(2))
 
-#              source   candidates  position  rank     found
-# 0       search_both   85.75      8.90      5.90      0.93
-# 0       search_both   25.95      7.86      5.02      0.88
-# 1   search_wikidata   27.09      6.95      2.59      0.84
-# 2  search_wikipedia   30.00      9.90      3.21      0.75
-# 1   search_wikidata   43.97      9.93      3.60      0.86
-# 2  search_wikipedia   50.00      14.88     3.18      0.75
+    #              source   candidates  position  rank     found
+    # 0       search_both   85.75      8.90      5.90      0.93
+    # 0       search_both   25.95      7.86      5.02      0.88
+    # 1   search_wikidata   27.09      6.95      2.59      0.84
+    # 2  search_wikipedia   30.00      9.90      3.21      0.75
+    # 1   search_wikidata   43.97      9.93      3.60      0.86
+    # 2  search_wikipedia   50.00      14.88     3.18      0.75

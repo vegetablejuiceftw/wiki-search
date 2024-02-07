@@ -1,18 +1,29 @@
 import dbm.gnu as dbm
+from typing import Dict, Any, List, Tuple
+
 import msgpack
 
 
-class DiskSearch:
+class DiskSearch(dict):
 
-    @staticmethod
-    def write(file_path: str, items: list):
-        with dbm.open(file_path, 'c') as db:
-            for item in items:
-                db[b'hello'] = msgpack.packb(item)
+    def __init__(self, file_path):
+        self.db = dbm.open(file_path, 'c')
 
-    @staticmethod
-    def read(file_path: str, key: str):
-        with dbm.open(file_path, 'c') as db:
-            item = db.get(key, None)
-            if item is not None:
-                return msgpack.unpackb(item)
+    def __getitem__(self, key):
+        return self.read(key)
+
+    def __setitem__(self, key, value):
+        self.write([(key, value)])
+
+    def write(self, items: List[Tuple[str, Any]]):
+        for key, item in items:
+            self.db[key] = msgpack.packb(item)
+
+    def read(self, key: str):
+        item = self.db.get(key, None)
+        if item is not None:
+            return msgpack.unpackb(item)
+
+    def iter(self):
+        for key in self.db.keys():
+            yield key.decode('utf-8'), msgpack.unpackb(self.db[key])
