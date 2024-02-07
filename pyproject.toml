@@ -17,6 +17,7 @@ tensorflow-hub = "^0.16.0"
 tensorflow = "<2.15"
 pandas = "^2.2.0"
 pydantic = "^2.6.0"
+msgpack = "^1.0.7"
 
 
 [[tool.poetry.source]]
