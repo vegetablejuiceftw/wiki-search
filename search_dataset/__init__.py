@@ -29,7 +29,8 @@ def evaluate(dataset, model, limit=30):
             ids = [r['wikidata_id'] for r in results]
             rank = location(annotated_idx, ids)
             data.append({
-                'source': model.name,
+                'source': model.source,
+                'method': model.method,
                 **row,
                 'target': annotated_idx,
                 'candidates': len(ids),

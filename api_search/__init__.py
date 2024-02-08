@@ -126,8 +126,12 @@ class WikiSearch(BaseModel):
         return self.func(mention_name, search_limit=self.search_limit)
 
     @property
-    def name(self):
-        return self.__class__.__name__ + " " + self.func.__name__
+    def source(self):
+        return self.func.__name__
+
+    @property
+    def method(self):
+        return self.__class__.__name__
 
 
 class WikiSearchExpanded(WikiSearch):

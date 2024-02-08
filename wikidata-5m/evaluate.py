@@ -17,15 +17,19 @@ class AliasSearch(BaseModel):
         mention_name, annotated_text, annotated_idx = row['name'], row['text'], row['id']
         phrases = get_phrases(mention_name, annotated_text)
         return list({
-            qid: {'wikidata_id': qid, 'name': mention_name}
-            for qid in chain(*[
+                        qid: {'wikidata_id': qid, 'name': mention_name}
+                        for qid in chain(*[
                 self.cache.read(p.lower()) or []
                 for p in phrases
             ])
-        }.values())
+                    }.values())
 
     @property
-    def name(self):
+    def method(self):
+        return self.__class__.__name__
+
+    @property
+    def source(self):
         return self.name or self.cache.__class__.__name__
 
 
