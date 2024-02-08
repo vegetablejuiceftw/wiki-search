@@ -1,5 +1,5 @@
 import dbm.gnu as dbm
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Iterable
 
 import msgpack
 
@@ -15,7 +15,7 @@ class DiskSearch(dict):
     def __setitem__(self, key, value):
         self.write([(key, value)])
 
-    def write(self, items: List[Tuple[str, Any]]):
+    def write(self, items: Iterable[Tuple[str, Any]]):
         for key, item in items:
             self.db[key] = msgpack.packb(item)
 
