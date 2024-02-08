@@ -27,3 +27,6 @@ class DiskSearch(dict):
     def iter(self):
         for key in self.db.keys():
             yield key.decode('utf-8'), msgpack.unpackb(self.db[key])
+
+    def keys(self):
+        return (key.decode('utf-8') for key in self.db.keys())

@@ -33,7 +33,7 @@ def gather_aliases(shard_name):
     for line in reader(shard_name):
         key = line['id']
         aliases = set(
-            label
+            label.lower()
             for label in chain(
                 (label for lang, label in line['labels']),
                 # (label for lang, label in line['descriptions']),
@@ -80,29 +80,30 @@ shards = list(glob.glob(SHARD_PATH))
 assert shards, f"are we sure that the `SHARD_PATH = {SHARD_PATH}` is correct?"
 
 
-dataset_aliases = DiskSearch('data/wikidata.cache')
-with Pool(len(shards)) as p:
-    for mapping in tqdm(p.imap(gather_values, shards), desc='collecting', total=len(shards)):
-        dataset_aliases.write(mapping)
-
-
-# alias_mapping = {}
+# dataset_aliases = DiskSearch('data/wikidata.cache')
 # with Pool(len(shards)) as p:
-#     for mapping in tqdm(p.imap(gather_aliases, shards), desc='collecting', total=len(shards)):
-#         for k, v in mapping.items():
-#             alies = alias_mapping.get(k)
-#             if alies is not None:
-#                 alies.update(v)
-#             else:
-#                 alias_mapping[k] = v
-#
-# dataset_aliases = DiskSearch('data/wikidata.aliases2.cache')
-# dataset_aliases.write(tqdm(
-#     (
-#         (k, tuple(sorted(v, key=lambda e: (len(e), e))))
-#         for k, v in alias_mapping.items()
-#     ),
-#     total=len(alias_mapping), desc="Writer"))
-#
-# print(dataset_aliases['Donald Trump'])
-# print(dataset_aliases['Estonia'])
+#     for mapping in tqdm(p.imap(gather_values, shards), desc='collecting', total=len(shards)):
+#         dataset_aliases.write(mapping)
+
+
+alias_mapping = {}
+with Pool(len(shards)) as p:
+    for mapping in tqdm(p.imap(gather_aliases, shards), desc='collecting', total=len(shards)):
+        for k, v in mapping.items():
+            alies = alias_mapping.get(k)
+            if alies is not None:
+                alies.update(v)
+            else:
+                alias_mapping[k] = v
+
+dataset_aliases = DiskSearch('data/wikidata.aliases-lc.cache')
+dataset_aliases.write(tqdm(
+    (
+        (k, tuple(sorted(v, key=lambda e: (len(e), e))))
+        for k, v in alias_mapping.items()
+    ),
+    total=len(alias_mapping), desc="Writer"))
+
+print(dataset_aliases['Donald Trump'.lower()])
+print(dataset_aliases['Estonia'.lower()])
+# 58 116 614

@@ -103,11 +103,18 @@ if __name__ == '__main__':
     # )
     # dataset.write(iterator)
 
-    dataset_aliases = DiskSearch('data/wikidata-5m-dataset.aliases.cache')
+    mapping = {}
     for key, data in tqdm(dataset.iter(), total=5_000_000):
         for lookup in (data['aliases'] or []):
-            ids = dataset_aliases[lookup] or []
-            dataset_aliases[lookup] = tuple(set([*ids, key]))
+            lookup = lookup.lower()
+            ids = mapping.get(lookup)
+            if ids is None:
+                mapping[lookup] = {key}
+            else:
+                ids.add(key)
+
+    dataset_aliases = DiskSearch('data/wikidata-5m-dataset.aliases.cache')
+    dataset_aliases.write(tqdm(mapping.items()))
 
     print(dataset_aliases['Donald Trump'])
     print(dataset_aliases['Estonia'])

@@ -18,6 +18,7 @@ tensorflow = "<2.15"
 pandas = "^2.2.0"
 pydantic = "^2.6.0"
 msgpack = "^1.0.7"
+spacy = "^3.7.3"
 
 
 [[tool.poetry.source]]

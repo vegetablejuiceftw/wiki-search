@@ -1,8 +1,11 @@
 from functools import lru_cache
+from itertools import chain
 from typing import Callable
 
 import requests
 from pydantic import BaseModel
+
+from noun_phases import get_phrases
 
 
 @lru_cache
@@ -124,19 +127,37 @@ class WikiSearch(BaseModel):
 
     @property
     def name(self):
-        return self.func.__name__
+        return self.__class__.__name__ + " " + self.func.__name__
+
+
+class WikiSearchExpanded(WikiSearch):
+    def search(self, row):
+        mention_name, annotated_text, annotated_idx = row['name'], row['text'], row['id']
+        phrases = get_phrases(mention_name, annotated_text)
+        return list({
+            result['wikidata_id']: result
+            for result in chain(*[
+                self.func(p, search_limit=self.search_limit)
+                for p in phrases
+            ])
+        }.values())
 
 
 if __name__ == '__main__':
     from search_dataset import SEARCH_DATASET, evaluate
     import pandas as pd
 
-    search_limit = 50
+    search_limit = 16
     dataset = SEARCH_DATASET[:]
     data = []
     data += evaluate(dataset, WikiSearch(search_limit=search_limit, func=search_wikipedia), search_limit)
     data += evaluate(dataset, WikiSearch(search_limit=search_limit, func=search_wikidata), search_limit)
     data += evaluate(dataset, WikiSearch(search_limit=search_limit, func=search_both), search_limit)
+
+    data += evaluate(dataset, WikiSearchExpanded(search_limit=search_limit, func=search_wikipedia), search_limit)
+    data += evaluate(dataset, WikiSearchExpanded(search_limit=search_limit, func=search_wikidata), search_limit)
+    data += evaluate(dataset, WikiSearchExpanded(search_limit=search_limit, func=search_both), search_limit)
+
     data = pd.DataFrame.from_records(data)
     print(data.groupby('source').mean(numeric_only=True).reset_index().round(2))
 
