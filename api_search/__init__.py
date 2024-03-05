@@ -6,9 +6,10 @@ import requests
 from pydantic import BaseModel
 
 from noun_phases import get_phrases
+from utils import disk_cached
 
 
-@lru_cache
+@disk_cached()
 def search_wikipedia(keyword, search_limit=50):
     base_url = "https://en.wikipedia.org/w/api.php"
     params = {
@@ -39,7 +40,7 @@ def search_wikipedia(keyword, search_limit=50):
     return results
 
 
-@lru_cache
+@disk_cached()
 def get_wikidata_ids(*page_ids):
     base_url = "https://en.wikipedia.org/w/api.php"
     params = {
@@ -69,7 +70,7 @@ def get_wikidata_ids(*page_ids):
     return [None] * len(page_ids)
 
 
-@lru_cache
+@disk_cached()
 def search_wikidata(keyword, search_limit=5):
     base_url = "https://www.wikidata.org/w/api.php"
     params = {
@@ -163,12 +164,4 @@ if __name__ == '__main__':
     data += evaluate(dataset, WikiSearchExpanded(search_limit=search_limit, func=search_both), search_limit)
 
     data = pd.DataFrame.from_records(data)
-    print(data.groupby('source').mean(numeric_only=True).reset_index().round(2))
-
-    #              source   candidates  position  rank     found
-    # 0       search_both   85.75      8.90      5.90      0.93
-    # 0       search_both   25.95      7.86      5.02      0.88
-    # 1   search_wikidata   27.09      6.95      2.59      0.84
-    # 2  search_wikipedia   30.00      9.90      3.21      0.75
-    # 1   search_wikidata   43.97      9.93      3.60      0.86
-    # 2  search_wikipedia   50.00      14.88     3.18      0.75
+    print(data.groupby(['source', 'method']).mean(numeric_only=True).sort_values("found").reset_index().round(2))

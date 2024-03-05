@@ -1,7 +1,6 @@
 from functools import lru_cache
 
 import spacy
-from tqdm.auto import tqdm
 from difflib import SequenceMatcher
 
 from search_dataset import SEARCH_DATASET
@@ -12,6 +11,13 @@ nlp = spacy.load("en_core_web_trf")
 @lru_cache
 def similar(a, b):
     return SequenceMatcher(None, a, b).ratio()
+
+
+@lru_cache
+def get_noun_phrases(text):
+    doc = nlp(text)
+    noun_phrases = set(c.text for c in doc.noun_chunks)
+    return noun_phrases
 
 
 @lru_cache

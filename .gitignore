@@ -1,4 +1,7 @@
 data/*.gz
+data/*.ann
+data/*.hdf5
+data/*/*
 data/*.cache
 .idea
 

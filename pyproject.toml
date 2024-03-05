@@ -19,6 +19,15 @@ pandas = "^2.2.0"
 pydantic = "^2.6.0"
 msgpack = "^1.0.7"
 spacy = "^3.7.3"
+faiss-cpu = "^1.7.4"
+gputil = "^1.4.0"
+pylance = "^0.9.15"
+annoy = "^1.17.3"
+h5py = "^3.10.0"
+rapidfuzz = "^3.6.1"
+diskcache = "^5.6.3"
+whoosh-reloaded = "^2.7.5"
+num2words = "^0.5.13"
 
 
 [[tool.poetry.source]]
