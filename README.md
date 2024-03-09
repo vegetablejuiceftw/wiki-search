@@ -19,3 +19,9 @@ Wikipedia / Wikidata search project for knowledge base RAG systems.
                     source           method  search_limit  candidates  distance  rank  found
 0  wikidata-full-emb-faiss  EmbeddingSearch           8.0      102.99      0.76  8.63   0.89
 ```
+
+
+## Notes:
+
+Qdrant - does not support text search
+marqo - does not support fuzzy search

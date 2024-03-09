@@ -36,13 +36,13 @@ split_analyzer = SplitTokenizer() | StripFilter() | LowercaseFilter() | Substitu
 
 schema = Schema(
     id=ID(unique=True, stored=True),
-    label=KEYWORD(stored=True, scorable=True, analyzer=split_analyzer, field_boost=2.0),
-    alias=KEYWORD(stored=True, scorable=True, analyzer=split_analyzer),
-    alias_ngram=NGRAMWORDS(stored=True, tokenizer=split_analyzer, minsize=2, maxsize=2),
-    title=TEXT(stored=True, lang="en", field_boost=2.0),
-    description=NGRAMWORDS(stored=True, minsize=2, maxsize=2),
-    # alias_count=NUMERIC(stored=True, sortable=True),
-    language_count=NUMERIC(stored=True, sortable=True),
+    # label=KEYWORD(stored=True, scorable=True, analyzer=split_analyzer, field_boost=2.0),
+    alias=KEYWORD(analyzer=split_analyzer),
+    alias_ngram=NGRAMWORDS(tokenizer=split_analyzer, minsize=2, maxsize=2),
+    # title=TEXT(lang="en", field_boost=2.0),
+    # description=NGRAMWORDS(minsize=2, maxsize=2),
+    # alias_count=NUMERIC(sortable=True),
+    language_count=NUMERIC(sortable=True),
 )
 # for field in ['title', 'description']:
 #     if field in schema:

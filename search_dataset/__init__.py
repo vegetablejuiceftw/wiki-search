@@ -167,11 +167,15 @@ def location(idx, arr):
 
 
 def evaluate(dataset, model, limit=30):
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.expand_frame_repr', False)
+    pd.set_option('display.max_colwidth', None)
+
     data = []
     for row in tqdm(dataset):
         annotated_idx = set(row["id"].split(";"))
         results = model.search(row)
-        result = next((r for r in results if r["wikidata_id"] in annotated_idx), default={})
+        result = next((r for r in results if r["wikidata_id"] in annotated_idx), {})
         distance = result.get("distance")
         ids = [r["wikidata_id"] for r in results]
         rank = min((location(qid, ids) for qid in annotated_idx if qid in ids), default=None)

@@ -28,6 +28,11 @@ rapidfuzz = "^3.6.1"
 diskcache = "^5.6.3"
 whoosh-reloaded = "^2.7.5"
 num2words = "^0.5.13"
+qdrant-client = "^1.8.0"
+tantivy = "^0.21.0"
+optuna = "^3.5.0"
+elasticsearch = "^8.12.1"
+opensearch-py = "^2.4.2"
 
 
 [[tool.poetry.source]]

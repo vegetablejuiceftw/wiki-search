@@ -22,7 +22,7 @@ class WhooshSearch(BaseSearch):
             # "label": 5.0,
             "alias": 1.0,
             "alias_ngram": 0.10,
-            # "description": 0.001,
+            # "description": -1.001,
         }
         # queries = [
         #     QueryParser(field, self.searcher.schema).parse(f"'{p}'").with_boost(boost)
@@ -59,13 +59,13 @@ class WhooshSearch(BaseSearch):
             query = Or(queries)
             # query = query_parser.parse(f"'{p}'") | query_label_parser.parse(f"'{p}'").with_boost(5.0) | title_query_parser.parse(f"'{p}'").with_boost(0.5)
             # print(query)
-            for hit in self.searcher.search(query, limit=self.search_limit, scored=True):
+            for hit in self.searcher.search(query, limit=self.search_limit, sortedby=facet):
                 results.append({
                     "wikidata_id": hit['id'],
                     "language_count": hit['language_count'],
                     **hit
                 })
-        # query = FuzzyTerm("alias", mention_name, maxdist=3)
+        # query = FuzzyTerm("alias", mention_name, maxdist=3, )
         # for hit in self.searcher.search(query, limit=self.search_limit):
         #     results.append({
         #         "wikidata_id": hit['id'],
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     from utils import reset_working_directory
 
     reset_working_directory()
-    index_dir = "data/whoosh-v3/"
+    index_dir = "data/whoosh-v3.micro/"
     assert SplitTokenizer
     searcher: Searcher = open_dir(index_dir).searcher()
 
@@ -115,3 +115,5 @@ if __name__ == '__main__':
     data = pd.DataFrame.from_records(data)
     print(data[~data.found]['name'].to_list())
     print(data.groupby(['source', "method"]).mean(numeric_only=True).reset_index().round(2))
+#             source        method  search_limit  candidates   rank  found  language_count
+# 0  wikidata-whoosh  WhooshSearch         512.0       461.9  26.24    0.9           54.13
