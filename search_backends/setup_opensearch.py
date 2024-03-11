@@ -20,35 +20,65 @@ client = OpenSearch(
 )
 
 index_name = "estonia_index"
-index_name = "search_index"
+index_name = "search_index_v2"
 
 try:
     client.indices.delete(index=index_name)
 except Exception as e:
     print("fail", e)
 
-index_settings = {
-    "settings": {
-        "analysis": {
-            "analyzer": {
-                "my_analyzer": {
-                    "type": "custom",
-                    "tokenizer": "standard",
-                    "filter": ["lowercase"]
-                }
-            }
-        }
-    },
-    "mappings": {
-        "properties": {
-            "aliases": {
-                "type": "keyword"
-            }
-            # Add other fields and their mappings as needed
+# index_settings = {
+#     "properties": {
+#         "aliases": {
+#             "type": "text",
+#             "fields": {
+#                 "keyword": {
+#                     "type": "keyword"
+#                 },
+#                 "lowercase": {  # Add a sub-field for case-insensitive searching
+#                     "type": "text",
+#                     "analyzer": "lowercase_analyzer"
+#                 }
+#             }
+#         }
+#     },
+#     "settings": {
+#         "analysis": {
+#             "analyzer": {
+#                 "lowercase_analyzer": {
+#                     "tokenizer": "keyword",  # Use keyword tokenizer to keep original token
+#                     "filter": "lowercase"    # Apply lowercase filter to tokens
+#                 }
+#             }
+#         }
+#     }
+# }
+# client.indices.create(index=index_name, body=index_settings)
+mapping_body = {
+    "properties": {
+        "aliases": {
+            "type": "keyword",
+            #  "filter": "lowercase",
+            # "analyzer": "lowercase_analyzer"
         }
     }
 }
-client.indices.create(index=index_name, body=index_settings)
+
+# Define the settings for the custom analyzer
+# settings_body = {
+#     "analysis": {
+#         "analyzer": {
+#             "lowercase_analyzer": {
+#                 "tokenizer": "keyword",
+#                 "filter": "lowercase"
+#             }
+#         }
+#     }
+# }
+
+client.indices.create(index=index_name)#, body={"settings": settings_body})
+client.indices.put_mapping(index=index_name, body=mapping_body)
+
 
 # docker kill $(docker ps -q)
 
@@ -58,20 +88,21 @@ total_rows = 27_420_075 or len(tuple(dataset.keys()))
 rows = (
     row
     for key, row in tqdm(dataset.iter(), total=total_rows)
-    if row['text'] and key.startswith('Q')# and any(k in a.lower() for a in row['aliases'] for k in ['est', 'norway', 'germany', 'america']) or row.get("count_languages", 0) > 5
+    if row['text'] and key.startswith('Q')# and row.get("count_languages", 0) > 0 # and any(k in a.lower() for a in row['aliases'] for k in ['est',]) and row.get("count_languages", 0) > 5
 )
 
 # # Define a generator function to yield documents in bulk
 def document_generator(rows):
     for row in rows:
         title = (row['labels'] + row['aliases'] + [row['text']])[0]
+        aliases = [a.lower() for a in row.get("aliases", [])]
         yield {
             "_index": index_name,
             "_id": row["id"],  # Assuming "id" is unique and can be used as the document ID
             "_source": {
                 "title": title,
                 "text": row["text"],
-                "aliases": row.get("aliases", []),
+                "aliases": aliases,
                 "popularity": row.get("count_languages", 0)
             }
         }

@@ -58,7 +58,7 @@ class EmbeddingSearch(BaseModel):
         output = []
         phrases = {p: 1 for p in get_phrases(mention_name, annotated_text) + mention_llm.split(",")}.keys()
         phrases = [p.strip() for p in phrases]
-        print(phrases)
+
         output += self.searcher_func(phrases, self.search_limit)
         output += sorted(results.values(), key=lambda d: d['distance'])
         output = list({d['wikidata_id']: d for d in output}.values())
@@ -151,7 +151,7 @@ if __name__ == '__main__':
     dataset = SEARCH_DATASET[:]
     data = []
 
-    alias_index = DiskSearch('data/wikidata-v3.aliases-lc.cache')
+    # alias_index = DiskSearch('data/wikidata-v3.aliases-lc.cache')
     # alias_keys = tuple(alias_index.keys())
     index_cache = DiskSearch('data/wikidata.index.v4.cache')
 
@@ -161,8 +161,8 @@ if __name__ == '__main__':
 
     for searcher_func in [
         noop_search,
-        alias_search,
-        whoosh_search,
+        # alias_search,
+        # whoosh_search,
         # rapidfuzz_search,
     ]:
         data += evaluate(
