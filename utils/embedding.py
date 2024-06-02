@@ -7,17 +7,23 @@ from multiprocessing import Lock
 gpu_select_lock = Lock()
 
 @lru_cache
-def load_st1():
+def load_st1(device=None):
     import torch
     from sentence_transformers import SentenceTransformer
-    with gpu_select_lock:
-        index, mem = get_gpu_with_most_free_memory()
-        device = torch.device('cpu') if index is None or mem > 100 else index
-        print(f"starting on {device}/{mem}")
-        model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
-        encoder = model.encode
+    if device:
+        print("DEVICE GIVEN", device)
+        model = SentenceTransformer('all-MiniLM-L6-v2', device=torch.device(device))
         print(model.device)
-    
+    else:
+        with gpu_select_lock:
+            index, mem = get_gpu_with_most_free_memory()
+            print(index, mem)
+            device = torch.device('cpu') if index is None or mem > 100 else torch.device(f'cuda:{index}')
+            print(f"starting on {device}/{mem}")
+            model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
+            print(model.device)
+
+    encoder = model.encode
     return encoder, model, 384
 
 

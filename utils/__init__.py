@@ -1,4 +1,5 @@
 import os
+import time
 import unicodedata
 
 import git
@@ -29,9 +30,28 @@ def reset_working_directory():
     os.chdir(ROOT_DIR)
 
 
+def throttle(pause=1):
+    def decorator(func):
+        last_call = 0
+
+        def wrapper(*args, **kwargs):
+            nonlocal last_call
+            current_time = time.time()
+            if current_time - last_call < pause:
+                time.sleep(pause - (current_time - last_call))
+            last_call = time.time()
+            return func(*args, **kwargs)
+
+        wrapper.__name__ = func.__name__
+        return wrapper
+
+    return decorator
+
+
 def disk_cached(version=None):
     def decorator(func):
-        cache = diskcache.Cache(f"data/{func.__name__}-{version}")
+        path = os.path.join(ROOT_DIR, f"data/caches/{func.__name__}-{version}")
+        cache = diskcache.Cache(path)
 
         def wrapper(*args, **kwargs):
             key = (args, frozenset(kwargs.items()))
