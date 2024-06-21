@@ -91,7 +91,7 @@ search_query = search_query_template(
     # {
     # 'aliases-a': 0.65, 'aliases-b': 0.9, 'aliases-c': 0.25, 'title-a': 0.875, 'title-b': 0.55, 'title-c': 0.35000000000000003, 'factor-a': 1.0},
     # {'aliases-a': 0.225, 'aliases-b': 0.7000000000000001, 'aliases-c': 0.42500000000000004, 'title-a': 0.4, 'title-b': 0.9750000000000001, 'title-c': 0.025, 'factor-a': 1.05, 'factor-modifier': 'ln2p', 'factor-mode': 'sum'}
-# {'aliases-a': 0.375, 'aliases-b': 0.65, 'aliases-c': 0.225, 'title-a': 0.05, 'title-b': 0.525, 'title-c': 0.17500000000000002, 'factor-a': 6.1000000000000005, 'factor-modifier': 'log2p', 'factor-mode': 'sum', 'item-mode': 'max'},
+    # {'aliases-a': 0.375, 'aliases-b': 0.65, 'aliases-c': 0.225, 'title-a': 0.05, 'title-b': 0.525, 'title-c': 0.17500000000000002, 'factor-a': 6.1000000000000005, 'factor-modifier': 'log2p', 'factor-mode': 'sum', 'item-mode': 'max'},
 )
 
 client = OpenSearch(
@@ -121,7 +121,7 @@ from tqdm.auto import tqdm
 import tantivy
 
 from diskstorage import DiskSearch
-from noun_phases import get_phrases
+from noun_phases import get_phrases, get_noun_phrases
 from search_dataset.base import BaseSearch
 from utils import reset_working_directory
 
@@ -131,9 +131,8 @@ alais_dataset = DiskSearch(f'data/wikidata-v3.cache')
 import faiss
 from utils.embedding import load_use4, load_st1
 
-vector_cache = 'data/test.v4.ann'
 emb_function = load_st1
-index = faiss.read_index(vector_cache)
+index = faiss.read_index('data/emb_index.v4.faiss')
 index_cache = DiskSearch('data/wikidata.index.v4.cache')
 
 def emb_search(text: list, search_limit: int, threshold = 0.95):
@@ -150,12 +149,13 @@ def emb_search(text: list, search_limit: int, threshold = 0.95):
                 results[r_key] = {
                     'wikidata_id': r_key,
                     'distance': distance,
-                    'score': 0,
+                    # 'score': 999_999,
                     **alais_dataset[r_key]
                 }
 
     output = sorted(results.values(), key=lambda d: d['distance'])
     output = list({d['wikidata_id']: d for d in output}.values())
+    output = [{**d, 'rank': i} for i, d in enumerate(output)]
     return output
 
 
@@ -169,64 +169,106 @@ def alias_search(
         for hit in alias_index[p] or []:
             output.append({
                 "wikidata_id": hit,
+                'alias': True,
+                "rank": 0,
                 **alais_dataset[hit]
             })
     return output
 
 
-class TantivitySearch(BaseSearch):
+class EmbeddingSearch(BaseSearch):
     searcher: object
-    field_boosts: dict = {'aliases-a': 0.7927352169388875, 'aliases-b': 0.9178313047483023, 'aliases-c': 0.5095442799625158, 'title-a': 0.20420266688286137, 'title-b': 0.7253511689319222, 'title-c': 0.5712360076555534, 'factor-a': 0.6569214852912253, 'aliases-kw': 2.75339469287054, 'title-kw': 0.11521869691561604}# {}#{'aliases-a': 0.375, 'aliases-b': 0.65, 'aliases-c': 0.225, 'title-a': 0.05, 'title-b': 0.525, 'title-c': 0.17500000000000002, 'factor-a': 6.1000000000000005, 'factor-modifier': 'log2p', 'factor-mode': 'sum', 'item-mode': 'max'}
+    field_boosts: dict = {
+        # 'support': -4.36, 'distance': 6.33, 'alias': 5.64, 'rank': 0
+        'support': -3.7378973216194193, 'distance': -1.7104238360343302, 'alias': -6.556479233679184
+    }
+
+    def sort_key(self, row):
+        score = 0
+        if row['support'] is not None:
+            score += row['support'] * self.field_boosts.get('support', 0)
+        if row['rank'] is not None:
+            score += (row['rank'] / self.search_limit) * self.field_boosts.get('rank', 0)
+        if row['distance'] is not None:
+            score += row['distance'] * self.field_boosts.get('distance', 0)
+        if row['alias'] is not None:
+            score += row['alias'] * self.field_boosts.get('alias', 0)
+        return score
+
     def search(self, row):
-        results = []
         mention_name, annotated_text, mention_llm = row['name'], row['text'], row['llm']
-        mention_class = row['class']
-        text = [
-            # mention_name + ", " + mention_llm.split(":")[-1].strip(),
-            # mention_llm.split(":")[-1].strip(),
-            mention_llm,
-            # *mention_llm.split(", "),
+        results = []
+        phrases = get_phrases(mention_name, annotated_text)
+
+        results += alias_search(phrases, self.search_limit)#[:self.search_limit]
+
+        # mention_class = row['class']
+        # mention_name = max(phrases, key=lambda p: (len(p), p[0].isupper()))
+        # mention_llm = mention_llm.split(":")[-1]
+        text_candidates = [
+            mention_name + ", " + mention_llm[0].lower() + mention_llm[1:].strip(),
+            # mention_llm,
             # annotated_text,
             # f"{mention_name}, {mention_class}",
             # ", ".join(get_noun_phrases(annotated_text)),
         ]
-        text = [s.replace("(", "").replace(")", "").split(': ')[-1] for s in text]
-        # print(mention_name, mention_class, text)
-        results += emb_search(text, self.search_limit)[:self.search_limit]
+        # text_candidates = [c[0].upper() + c[1:] for c in text_candidates]
+        # text_candidates = [s.replace("(", "").replace(")", "").split(': ')[-1] for s in text_candidates]
 
-        phrases = get_phrases(mention_name, annotated_text)# + mention_llm.split(",")[:5]
-        phrases = {p.strip(): 1 for p in phrases}.keys()
-        
-        # results += alias_search(phrases, self.search_limit)
+        results += emb_search(text_candidates, self.search_limit, threshold=1.00)[:self.search_limit]
+        # results = list({d['wikidata_id']: d for d in results}.values())
+
+        # print(mention_name, phrases)
         # results = [r for r in results if r['count_languages'] > 0]
-        # print(phrases, row['id'])
 
-        # query = search_query_template(phrases, self.field_boosts)
-        # response = self.searcher.search(index=index_name, body=query, size=self.search_limit, _source=False)
-        # hits = response["hits"]["hits"]
-        # for i, hit in enumerate(hits):
-        #     results.append({
-        #         "wikidata_id": hit["_id"],
-        #         "score": hit["_score"],
-        #         # "index": i,
-        #     })
+        query = search_query_template(phrases, self.field_boosts)
+        response = self.searcher.search(index=index_name, body=query, size=self.search_limit, _source=False)
+        hits = response["hits"]["hits"]
+        for i, hit in enumerate(hits):
+            results.append({
+                "wikidata_id": hit["_id"],
+                "score": hit["_score"],
+                "rank": i,
+            })
 
-        results = sorted(results, key=lambda d: d.get('score', 999_999), reverse=True)
-        results = list({d['wikidata_id']: d for d in results}.values())
+        # results = sorted(results, key=lambda d: d.get('score', 999_999), reverse=True)
+
+        found = dict(Counter(d['wikidata_id'] for d in results).most_common())
+        # results = [d for d in results if found[d['wikidata_id']] > 1]
+
+        temp = {}
+        for d in results:
+            entry = temp.get(d['wikidata_id'])
+            if not entry:
+                entry = temp[d['wikidata_id']] = d
+
+            entry['support'] = found[entry['wikidata_id']]
+            entry['rank'] = min(entry['rank'], d['rank'])
+            entry['distance'] = min(entry.get('distance') or -1, d.get('distance') or -1)
+            entry['distance'] = None if entry['distance'] == -1 else entry['distance']
+            entry['alias'] = bool(entry.get('alias') or d.get('alias'))
+
+        results = list(temp.values())
+        # results = sorted(results, key=lambda d: (-d['support'], d['rank']))
+        results = sorted(results, key=self.sort_key)
+        results = results[:self.search_limit]
+
+        # results = list({d['wikidata_id']: d for d in results}.values())
+        # results = sorted(results, key=lambda d: d.get('rank', 999_999))
         return results
 
-
+from collections import Counter
 from search_dataset import SEARCH_DATASET, evaluate
 import pandas as pd
 
-search_limit = 32
+search_limit = 96
 # search_limit = 1024 * 8
-dataset = SEARCH_DATASET[:]
+dataset = SEARCH_DATASET[::]
 # dataset = [d for d in dataset if d['id'] in ['Q48814715', 'Q113640505']]
 data = []
 data += evaluate(
     dataset,
-    TantivitySearch(
+    EmbeddingSearch(
         searcher=client,
         search_limit=search_limit,
         name='wikidata-weight',
@@ -235,10 +277,10 @@ data += evaluate(
 )
 
 data = pd.DataFrame.from_records(data)
-print(data[~data.found]['name'].to_list())
+# print(data[~data.found]['name'].to_list())
 print(data.groupby(['source', "method"]).mean(numeric_only=True).reset_index().round(2))
 
-exit()
+# exit()
 
 import optuna
 from functools import lru_cache
@@ -257,25 +299,16 @@ def get_searcher():
 def objective(trial: optuna.Trial):
 
     data = evaluate(
-        dataset,
-        TantivitySearch(
+        dataset[::],
+        EmbeddingSearch(
             searcher=get_searcher(),
             search_limit=search_limit,
             name='wikidata-weight',
             field_boosts = {
-                "aliases-a": trial.suggest_float("aliases-a", 0.0, 1.0),
-                "aliases-b": trial.suggest_float("aliases-b", 0.0, 1.0),
-                "aliases-c": trial.suggest_float("aliases-c", 0.0, 1.0),
-                "title-a": trial.suggest_float("title-a", 0.0, 1.0),
-                "title-b": trial.suggest_float("title-b", 0.0, 1.0),
-                "title-c": trial.suggest_float("title-c", 0.0, 1.0),
-                "factor-a": trial.suggest_float("factor-a", 0.0, 10.0),
-                # 'factor-modifier': trial.suggest_categorical('factor-modifier', ["log2p", "none", "ln2p", "ln1p"]),
-                # 'factor-mode': trial.suggest_categorical('factor-mode', ["sum", "avg", "multiply"]),
-                
-                "aliases-kw": trial.suggest_float("aliases-kw", 0.0, 3.0),
-                "title-kw": trial.suggest_float("title-kw", 0.0, 3.0),
-                # 'item-mode': trial.suggest_categorical('item-mode', ["avg", "max"]),
+                "support": trial.suggest_float("support", -10.0, 1.0, step=0.1),
+                "distance": trial.suggest_float("distance", -10.0, 1.0, step=0.1),
+                "alias": trial.suggest_float("alias", -10.0, 1.0, step=0.1),
+                # "rank": trial.suggest_float("rank", -10.0, 10.0),
             },
         ),
         search_limit,
@@ -287,9 +320,9 @@ def objective(trial: optuna.Trial):
     # return round(score, 3)
     return (round(found, 3), round(score, 3))
 
-search_limit = 32
+search_limit = 128
 study = optuna.create_study(directions=["maximize", "minimize"])#directions=["maximize", "minimize"])
-study.optimize(objective, n_trials=100, n_jobs=4)
+study.optimize(objective, n_trials=100)
 
 for trial in study.best_trials:
     print(trial.values, trial.params)

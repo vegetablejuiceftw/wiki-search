@@ -25,3 +25,6 @@ Wikipedia / Wikidata search project for knowledge base RAG systems.
 
 Qdrant - does not support text search
 marqo - does not support fuzzy search
+
+
+Wikipedia short text is required for vector search

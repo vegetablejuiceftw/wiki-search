@@ -21,7 +21,7 @@ services:
         soft: 4096
         hard: 4096
     volumes:
-      - "/home/derf/projects/wiki-search/data/opensearch-data-v7:/usr/share/opensearch/data"
+      - "/home/derf/projects/wiki-search/data/opensearch-data/full-index-v6:/usr/share/opensearch/data"
       # - type: volume
       #   source: opensearch-data-v6
       #   target: /usr/share/opensearch/data

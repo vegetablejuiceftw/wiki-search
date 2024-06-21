@@ -2,6 +2,7 @@ import pandas as pd
 from tqdm.auto import tqdm
 import unicodedata
 
+from search_dataset.llm_expansion import complete_prompt
 from utils import reset_working_directory
 
 reset_working_directory()
@@ -148,155 +149,141 @@ data = {
     # "133": "gaming, video game, physics simulation, ragdoll physics, virtual characters",
 }
 
-data = {
-    "0": "Biology: Fertilizing eggs after phallic jousting match, motherhood consolation.",
-    "1": "Agriculture: Less is more in fertilizing, emphasizing micronutrient balance.",
-    "2": "Game: Strategic maneuvering in a game involving a king piece.",
-    "3": "Character: King, the strongest hero on earth, sought by others for aid.",
-    "4": "Spyware: Pegasus, an Israeli intelligence asset, suffers a critical failure.",
-    "5": "Creature: Pegasus, a mythical winged horse, its real mythology often overlooked.",
-    "6": "Company: Google invests in Anthropic, rival to OpenAI.",
-    "7": "Principle: Anthropic Principle, related to the concept of super-intelligence.",
-    "8": "Machine learning: Anthropically focused model, Claude 2.0, shows improvement.",
-    "9": "Material: Lint accumulation poses fire hazard, notably in dryer ducts.",
-    "10": "Material: Belly button lint, a mixture of fibers and hair, can cause infections.",
-    "11": "Software: Linter dependencies include ESLint and Prettier for code quality.",
-    "12": "Profession: Bard, historically known for entertainment and storytelling.",
-    "13": "Machine learning: Bard model, distinct from Bing, shows emerging differences.",
-    "14": "Franchise: Transformers, encompassing various characters and stories.",
-    "15": "Machine learning: Transformer neural network contextualizes character relationships.",
-    "16": "Electrical: Compatibility with 8-24v AC Transformers indicated for device usage.",
-    "17": "Gaming: Cheating enhances gaming experience, celebrated as top-tier strategy.",
-    "18": "Relationship: Cheating condemned as morally wrong, with gender differences in motivations.",
-    "19": "Gaming: Cheating in games grants players superior knowledge, often at high skill levels.",
-    "20": "Education: Academic dishonesty, exemplified by cheating, poses challenges for professors.",
-    "21": "Franchise: Alien series movies depict encounters with extraterrestrial beings.",
-    "22": "Lifeform: Hypothetical encounters with aliens raise questions on appearance and communication.",
-    "23": "Immigration: DHS lacks criminal history data on aliens from countries that don't report.",
-    "24": "Profession: Hitman hired for nefarious purposes, exemplified by criminal cases.",
-    "25": "Game: Hitman 2 offers diverse strategies and options for completing objectives.",
-    "26": "Game: Two Worlds Two, an RPG, becomes playable after anticipation.",
-    "27": "Behaviour: Malicious compliance rewarded after strict adherence to rules.",
-    "28": "Clothing: Beanie adorned with cat ears, described as super cute.",
-    "29": "Toy: Beanie Boo collection involves grouping by color, such as red.",
-    "30": "Intoxication: Getting high in Washington State, referencing cannabis consumption.",
-    "31": "Activity: Baking cookies at 350°F, preparing multiple ovens for the task.",
-    "32": "Material: Baking soda uses include heartburn relief and natural deodorant.",
-    "33": "Dish: Classic baked potato, simple preparation with rubbed oil.",
-    "34": "Show: Wan Show transcripts provide content for chat prompts.",
-    "35": "Finance: Tanked credit despite efforts to build, now at 700.",
-    "36": "Attribution: Republicans claim credit for actions after voting out.",
-    "37": "Singer: Taylor Swift, prominent figure in popular culture.",
-    "38": "Computer science: Learn Swift programming, suitable for beginners.",
-    "39": "Finance: Kiev angered over EU's Swift payment system indecision.",
-    "40": "Animal: 30-foot Python found in Indonesia, charred carcass discovered.",
-    "41": "Computer science: Django web framework using Python for web apps.",
-    "42": "Computer science: Ajax crash course, vital in web development.",
-    "43": "History: Ajax in Atlantis, witness to its destruction, aided by Athena.",
-    "44": "Computer science: OOP emphasizes code as objects, essential paradigm.",
-    "45": "Lithography: Infinity Fabric links CPU to RAM, tied to RAM frequency.",
-    "46": "Material: Dollar Tree offers varied fabric rolls in different colors.",
-    "47": "Computer science: Metadata inconsistencies in images, editing software effects.",
-    "48": "Agreement: Secure dining reservation during off-peak times for convenience.",
-    "49": "Profession: Tailor alters clothing to exact measurements for perfect fit.",
-    "50": "Character: Doctor's relationship with TARDIS, pivotal in storyline.",
-    "51": "Software: WordPad saves document as doc file for later use.",
-    "52": "Act: Subject to audience's mercy, particularly on YouTube.",
-    "53": "Character: Overwatch characters include Mercy, Genji, and Hanzo.",
-    "54": "Business: Pitching AI unicorn startup, addressing blank costs.",
-    "55": "Creature: Befriending a unicorn, riding through magical lands together.",
-    "56": "Clothing: Reviewing three sexy skirts from Amazon, pleased with quality.",
-    "57": "Character: Geralt and Dandelion fishing, encounter massive catfish.",
-    "58": "Plant: Wild dandelion greens offer nourishment and survival food source.",
-    "59": "Character: Robin Hood depicted as a vicious figure in early tales.",
-    "60": "Business: Robinhood app democratizes investment, founded by Stanford graduates.",
-    "61": "Software: Blender render time measured, baseline entry at 15.8 minutes.",
-    "62": "Appliance: Blender used for making banana smoothies, emits noise.",
-    "63": "Role: OP's friend attempts to steal boyfriend, r/relationshipadvice scenario.",
-    "64": "Media: Different versions of English dubbed anime OP themes.",
-    "65": "Game: Fast-paced squash requires racquet, ball, court, and opponent.",
-    "66": "Food: Squash fruits harvested in 2-3 weeks, simple process.",
-    "67": "Game: Internet challenge: mentioning 'the game' leads to loss.",
-    "68": "Game: Diablo 4 game doesn't require monthly subscription, one-time purchase.",
-    "69": "Software: VS Code extension 'Prettier' for code formatting.",
-    "70": "Legal: Aggravated mayhem charge for torturing husband amid divorce.",
-    "71": "Software: Bevy framework, Rust programming language.",
-    "72": "Device: Remote-controlled fan regulates speed, oscillation, airflow.",
-    "73": "Hardware: Phanteks 120mm T30 fan claims superiority over Noctua NFA 12.",
-    "74": "Group: Being a fan of an artist's music or work.",
-    "75": "Material: WD-40, not a lubricant, but a water displacer.",
-    "76": "Game: Crystal, traditional pool player on World Snooker tour.",
-    "77": "Location: Backyard pool used for baby deer rescue.",
-    "78": "Hardware: Nut threaded onto lead screw, requiring removal.",
-    "79": "Food: Shelling nuts for consumption, historic nutcrackers at Leavenworth.",
-    "80": "Military: Decline in Russian arms exports under Putin's leadership.",
-    "81": "Company: Apple's influence on ARM spun-off company in 1990.",
-    "82": "Technology: ARM processors in smartphones, incompatible with x86.",
-    "83": "Body Part: Completing exercises for complete arm pump.",
-    "84": "Sports: NFL assistant coaches build dossiers during college football careers.",
-    "85": "Sports: Contenders for UK's most hated football club.",
-    "86": "Software: Downloading computer viruses, background changes after recovery.",
-    "87": "Biology: Skin's barrier against cold viruses, prevents infection.",
-    "88": "Communication: Glassnode's hodl wave indicator for analyzing crypto market.",
-    "89": "Math: Determining prime numbers, challenging identification.",
-    "90": "Food: Prime energy drink, granting powerful new abilities.",
-    "91": "Condition: Prime years for defenders, understanding game and body.",
-    "92": "Sports: European-born sumo wrestlers achieving titles.",
-    "93": "Character: Boruto apologizes for actions, injured arms bandaged.",
-    "94": "Country: Acquisition of F-16s by Turkey under Erdogan's leadership.",
-    "95": "Animal: Turkey elusive in hunting scenario.",
-    "96": "Food: Turkey used in sturdy sandwich ingredients.",
-    "97": "Chemical: Upset over water containing lead, concerns over poisoning.",
-    "98": "Award: Darwin award earned by reckless actions, lack of safety precautions.",
-    "99": "Substance: LSD used for brainwashing and manipulation in Cold War.",
-    "100": "Computer Science: Heap deletion method, removing only root element.",
-    "101": "Military: Fat Man bomb, nuclear explosion caused by plutonium.",
-    "102": "Food: Monster energy drink, popularizing energy drinks since late '90s.",
-    "103": "Creature: Unique monsters in RPG, undefeated by any person.",
-    "104": "Race: Tiefling halfling variant, chaotic nature with demonic background.",
-    "105": "Animal: Kiwi egg size compared to body, not largest egg.",
-    "106": "Food: Nutritional benefits of kiwi fruit, high vitamin C content.",
-    "107": "Astronautics: Mars rover Ingenuity's communication loss during emergency landing.",
-    "108": "Trait: Hero's ingenuity, ability to think outside the box.",
-    "109": "Astronautics: NASA's Curiosity rover, rocket-powered sky crane landing.",
-    "110": "Trait: Embracing curiosity, superior to following passion.",
-    "111": "Software: Kerberos network authentication protocol.",
-    "112": "Creature: Cerberus, guard dog of Hades, prevents escape from underworld.",
-    "113": "Song: Factors shaping 'Tattoo' by Loreen.",
-    "114": "Art: Tattoo artist's humanity and part of tattooing process.",
-    "115": "Instrument: Piccolo's role in orchestra, enhancing sound.",
-    "116": "Character: Piccolo referencing Frieza in a conversation.",
-    "117": "Group: Percentage of Indians practicing vegetarianism.",
-    "118": "Group: American assimilation strategy for dealing with Indians.",
-    "119": "Item: Demon core criticality accident, nuclear chain reaction.",
-    "120": "Software: Python course dependencies including pandas library.",
-    "121": "Animal: Panda's herbivorous diet despite order name Carnivora.",
-    "122": "Military: Javelin missile system, portable anti-tank weapon.",
-    "123": "Military: T-90 tank's relevance in modern warfare.",
-    "124": "Military: British contribution of Challenger 2 tanks to Ukraine.",
-    "125": "Group: Nafo's role in countering Russian disinformation.",
-    "126": "Culture: Absolute territory, strip of thigh visible below skirt.",
-    "127": "Product: Bad Dragon dildo received as a holiday bonus.",
-    "128": "Affliction: Witness experiencing a seizure during police interaction.",
-    "129": "Legal: Financial seizure related to virtual currency exchange hack.",
-    "130": "Machine Learning: RAG model, retrieving and generating from passages.",
-    "131": "Item: Wiping dust off a panel using a rag soaked in mineral spirits.",
-    "132": "Gaming: Simulation of battles using rag dolls for entertainment.",
-}
-
-
-
-
-
-SEARCH_DATASET = df.to_dict(orient="records")
-for i, v in enumerate(SEARCH_DATASET, start=0):
-    v["text"] = (
-        unicodedata.normalize("NFKD", v["text"].strip())
-        .encode("ascii", "ignore")
-        .decode()
-        .replace("  ", " ")
-    )
-    v["llm"] = data[str(i)]
+# data = {
+#     "0": "Biology: Fertilizing eggs after phallic jousting match, motherhood consolation.",
+#     "1": "Agriculture: Less is more in fertilizing, emphasizing micronutrient balance.",
+#     "2": "Game: Strategic maneuvering in a game involving a king piece.",
+#     "3": "Character: King, the strongest hero on earth, sought by others for aid.",
+#     "4": "Spyware: Pegasus, an Israeli intelligence asset, suffers a critical failure.",
+#     "5": "Creature: Pegasus, a mythical winged horse, its real mythology often overlooked.",
+#     "6": "Company: Google invests in Anthropic, rival to OpenAI.",
+#     "7": "Principle: Anthropic Principle, related to the concept of super-intelligence.",
+#     "8": "Machine learning: Anthropically focused model, Claude 2.0, shows improvement.",
+#     "9": "Material: Lint accumulation poses fire hazard, notably in dryer ducts.",
+#     "10": "Material: Belly button lint, a mixture of fibers and hair, can cause infections.",
+#     "11": "Software: Linter dependencies include ESLint and Prettier for code quality.",
+#     "12": "Profession: Bard, historically known for entertainment and storytelling.",
+#     "13": "Machine learning: Bard model, distinct from Bing, shows emerging differences.",
+#     "14": "Franchise: Transformers, encompassing various characters and stories.",
+#     "15": "Machine learning: Transformer neural network contextualizes character relationships.",
+#     "16": "Electrical: Compatibility with 8-24v AC Transformers indicated for device usage.",
+#     "17": "Gaming: Cheating enhances gaming experience, celebrated as top-tier strategy.",
+#     "18": "Relationship: Cheating condemned as morally wrong, with gender differences in motivations.",
+#     "19": "Gaming: Cheating in games grants players superior knowledge, often at high skill levels.",
+#     "20": "Education: Academic dishonesty, exemplified by cheating, poses challenges for professors.",
+#     "21": "Franchise: Alien series movies depict encounters with extraterrestrial beings.",
+#     "22": "Lifeform: Hypothetical encounters with aliens raise questions on appearance and communication.",
+#     "23": "Immigration: DHS lacks criminal history data on aliens from countries that don't report.",
+#     "24": "Profession: Hitman hired for nefarious purposes, exemplified by criminal cases.",
+#     "25": "Game: Hitman 2 offers diverse strategies and options for completing objectives.",
+#     "26": "Game: Two Worlds Two, an RPG, becomes playable after anticipation.",
+#     "27": "Behaviour: Malicious compliance rewarded after strict adherence to rules.",
+#     "28": "Clothing: Beanie adorned with cat ears, described as super cute.",
+#     "29": "Toy: Beanie Boo collection involves grouping by color, such as red.",
+#     "30": "Intoxication: Getting high in Washington State, referencing cannabis consumption.",
+#     "31": "Activity: Baking cookies at 350°F, preparing multiple ovens for the task.",
+#     "32": "Material: Baking soda uses include heartburn relief and natural deodorant.",
+#     "33": "Dish: Classic baked potato, simple preparation with rubbed oil.",
+#     "34": "Show: Wan Show transcripts provide content for chat prompts.",
+#     "35": "Finance: Tanked credit despite efforts to build, now at 700.",
+#     "36": "Attribution: Republicans claim credit for actions after voting out.",
+#     "37": "Singer: Taylor Swift, prominent figure in popular culture.",
+#     "38": "Computer science: Learn Swift programming, suitable for beginners.",
+#     "39": "Finance: Kiev angered over EU's Swift payment system indecision.",
+#     "40": "Animal: 30-foot Python found in Indonesia, charred carcass discovered.",
+#     "41": "Computer science: Django web framework using Python for web apps.",
+#     "42": "Computer science: Ajax crash course, vital in web development.",
+#     "43": "History: Ajax in Atlantis, witness to its destruction, aided by Athena.",
+#     "44": "Computer science: OOP emphasizes code as objects, essential paradigm.",
+#     "45": "Lithography: Infinity Fabric links CPU to RAM, tied to RAM frequency.",
+#     "46": "Material: Dollar Tree offers varied fabric rolls in different colors.",
+#     "47": "Computer science: Metadata inconsistencies in images, editing software effects.",
+#     "48": "Agreement: Secure dining reservation during off-peak times for convenience.",
+#     "49": "Profession: Tailor alters clothing to exact measurements for perfect fit.",
+#     "50": "Character: Doctor's relationship with TARDIS, pivotal in storyline.",
+#     "51": "Software: WordPad saves document as doc file for later use.",
+#     "52": "Act: Subject to audience's mercy, particularly on YouTube.",
+#     "53": "Character: Overwatch characters include Mercy, Genji, and Hanzo.",
+#     "54": "Business: Pitching AI unicorn startup, addressing blank costs.",
+#     "55": "Creature: Befriending a unicorn, riding through magical lands together.",
+#     "56": "Clothing: Reviewing three sexy skirts from Amazon, pleased with quality.",
+#     "57": "Character: Geralt and Dandelion fishing, encounter massive catfish.",
+#     "58": "Plant: Wild dandelion greens offer nourishment and survival food source.",
+#     "59": "Character: Robin Hood depicted as a vicious figure in early tales.",
+#     "60": "Business: Robinhood app democratizes investment, founded by Stanford graduates.",
+#     "61": "Software: Blender render time measured, baseline entry at 15.8 minutes.",
+#     "62": "Appliance: Blender used for making banana smoothies, emits noise.",
+#     "63": "Role: OP's friend attempts to steal boyfriend, r/relationshipadvice scenario.",
+#     "64": "Media: Different versions of English dubbed anime OP themes.",
+#     "65": "Game: Fast-paced squash requires racquet, ball, court, and opponent.",
+#     "66": "Food: Squash fruits harvested in 2-3 weeks, simple process.",
+#     "67": "Game: Internet challenge: mentioning 'the game' leads to loss.",
+#     "68": "Game: Diablo 4 game doesn't require monthly subscription, one-time purchase.",
+#     "69": "Software: VS Code extension 'Prettier' for code formatting.",
+#     "70": "Legal: Aggravated mayhem charge for torturing husband amid divorce.",
+#     "71": "Software: Bevy framework, Rust programming language.",
+#     "72": "Device: Remote-controlled fan regulates speed, oscillation, airflow.",
+#     "73": "Hardware: Phanteks 120mm T30 fan claims superiority over Noctua NFA 12.",
+#     "74": "Group: Being a fan of an artist's music or work.",
+#     "75": "Material: WD-40, not a lubricant, but a water displacer.",
+#     "76": "Game: Crystal, traditional pool player on World Snooker tour.",
+#     "77": "Location: Backyard pool used for baby deer rescue.",
+#     "78": "Hardware: Nut threaded onto lead screw, requiring removal.",
+#     "79": "Food: Shelling nuts for consumption, historic nutcrackers at Leavenworth.",
+#     "80": "Military: Decline in Russian arms exports under Putin's leadership.",
+#     "81": "Company: Apple's influence on ARM spun-off company in 1990.",
+#     "82": "Technology: ARM processors in smartphones, incompatible with x86.",
+#     "83": "Body Part: Completing exercises for complete arm pump.",
+#     "84": "Sports: NFL assistant coaches build dossiers during college football careers.",
+#     "85": "Sports: Contenders for UK's most hated football club.",
+#     "86": "Software: Downloading computer viruses, background changes after recovery.",
+#     "87": "Biology: Skin's barrier against cold viruses, prevents infection.",
+#     "88": "Communication: Glassnode's hodl wave indicator for analyzing crypto market.",
+#     "89": "Math: Determining prime numbers, challenging identification.",
+#     "90": "Food: Prime energy drink, granting powerful new abilities.",
+#     "91": "Condition: Prime years for defenders, understanding game and body.",
+#     "92": "Sports: European-born sumo wrestlers achieving titles.",
+#     "93": "Character: Boruto apologizes for actions, injured arms bandaged.",
+#     "94": "Country: Acquisition of F-16s by Turkey under Erdogan's leadership.",
+#     "95": "Animal: Turkey elusive in hunting scenario.",
+#     "96": "Food: Turkey used in sturdy sandwich ingredients.",
+#     "97": "Chemical: Upset over water containing lead, concerns over poisoning.",
+#     "98": "Award: Darwin award earned by reckless actions, lack of safety precautions.",
+#     "99": "Substance: LSD used for brainwashing and manipulation in Cold War.",
+#     "100": "Computer Science: Heap deletion method, removing only root element.",
+#     "101": "Military: Fat Man bomb, nuclear explosion caused by plutonium.",
+#     "102": "Food: Monster energy drink, popularizing energy drinks since late '90s.",
+#     "103": "Creature: Unique monsters in RPG, undefeated by any person.",
+#     "104": "Race: Tiefling halfling variant, chaotic nature with demonic background.",
+#     "105": "Animal: Kiwi egg size compared to body, not largest egg.",
+#     "106": "Food: Nutritional benefits of kiwi fruit, high vitamin C content.",
+#     "107": "Astronautics: Mars rover Ingenuity's communication loss during emergency landing.",
+#     "108": "Trait: Hero's ingenuity, ability to think outside the box.",
+#     "109": "Astronautics: NASA's Curiosity rover, rocket-powered sky crane landing.",
+#     "110": "Trait: Embracing curiosity, superior to following passion.",
+#     "111": "Software: Kerberos network authentication protocol.",
+#     "112": "Creature: Cerberus, guard dog of Hades, prevents escape from underworld.",
+#     "113": "Song: Factors shaping 'Tattoo' by Loreen.",
+#     "114": "Art: Tattoo artist's humanity and part of tattooing process.",
+#     "115": "Instrument: Piccolo's role in orchestra, enhancing sound.",
+#     "116": "Character: Piccolo referencing Frieza in a conversation.",
+#     "117": "Group: Percentage of Indians practicing vegetarianism.",
+#     "118": "Group: American assimilation strategy for dealing with Indians.",
+#     "119": "Item: Demon core criticality accident, nuclear chain reaction.",
+#     "120": "Software: Python course dependencies including pandas library.",
+#     "121": "Animal: Panda's herbivorous diet despite order name Carnivora.",
+#     "122": "Military: Javelin missile system, portable anti-tank weapon.",
+#     "123": "Military: T-90 tank's relevance in modern warfare.",
+#     "124": "Military: British contribution of Challenger 2 tanks to Ukraine.",
+#     "125": "Group: Nafo's role in countering Russian disinformation.",
+#     "126": "Culture: Absolute territory, strip of thigh visible below skirt.",
+#     "127": "Product: Bad Dragon dildo received as a holiday bonus.",
+#     "128": "Affliction: Witness experiencing a seizure during police interaction.",
+#     "129": "Legal: Financial seizure related to virtual currency exchange hack.",
+#     "130": "Machine Learning: RAG model, retrieving and generating from passages.",
+#     "131": "Item: Wiping dust off a panel using a rag soaked in mineral spirits.",
+#     "132": "Gaming: Simulation of battles using rag dolls for entertainment.",
+# }
 
 
 def location(idx, arr):
@@ -316,7 +303,7 @@ def evaluate(dataset, model, limit=30):
         annotated_idx = set(row["id"].split(";"))
         results = model.search(row)
         result = next((r for r in results if r["wikidata_id"] in annotated_idx), {})
-        distance = result.get("distance")
+        # distance = result.get("distance")
         ids = [r["wikidata_id"] for r in results]
         rank = min((location(qid, ids) for qid in annotated_idx if qid in ids), default=None)
 
@@ -328,7 +315,7 @@ def evaluate(dataset, model, limit=30):
                 **row,
                 "target": annotated_idx,
                 "candidates": len(ids),
-                "distance": distance,
+                # "distance": distance,
                 # 'position': rank if rank is not None else limit,
                 "rank": rank,
                 "found": rank is not None,
@@ -339,49 +326,49 @@ def evaluate(dataset, model, limit=30):
     return data
 
 
+SEARCH_DATASET = df.to_dict(orient="records")
+SEARCH_DATASET = SEARCH_DATASET#[:64]
 
-template = """Please help me to disambiguate these {total} Wikidata items based on the provided context snippets.
+prompt_template = """\
+    You will be writing a short, universal definition of a term found in provided context. The goal is
+    to create a definition that could be used to add the term to Wikidata for future use.
 
-Please pay attention to the `category` and `context` attributes to correctly identify and describe each keyword. 
+    You will be provided with the following inputs:
+    "{name}" - The name of the term you need to define.
+    "{class}" - The category or domain the term belongs to.
+    "{text}" - A short paragraph of context about the term.
 
-For each of the {total} keywords please provide me a Wikidata style definitions based on the context as a string. 
-Include relevant taxonomy and keywords it belongs to in the definition string.
-The definition should be aroung 10 words long.
+    First, review the provided inputs carefully. Think about how you can use the name, category, and
+    context information to write a clear, concise definition of the term.
 
-```json
-{keywords}
-```
+    Next, write a short, universal definition of the term, approximately 7 words long. The
+    definition should be general enough to be useful for adding the term to Wikidata, but specific
+    enough to accurately capture the meaning of the term. Do not start the definition with the term name.
 
-Please respond in this JSON format using the same keys as above:
+    Only output your definition inside <definition> tags."""
 
-```json
-{{
-    "{first}": "first definition",
-    ...
-    "{last}": "last definition",
-}}
-```
-"""
+gaslight = "As depicted in the provided context the definition is: <definition>"
 
-if __name__ == "__main__":
-    import json
-    from itertools import islice
-
-    file = open("prompt.txt", "w")
-    d = 34
-    for j in range(0, len(SEARCH_DATASET), d):
-        data = {}
-        for i in range(j, min(j + d, len(SEARCH_DATASET))):
-            v = SEARCH_DATASET[i]
-            data[i] = v.copy()
-            data[i].pop("id")
-            data[i]["category"] = data[i].pop("class")
-            data[i]["text"] = data[i].pop("text")
-            data[i].pop("llm", None)
-        
-        out = template.format(keywords=json.dumps(data), total=len(data), first=min(data.keys()), last=max(data.keys()))
-        # print(out)
-        # print()
-        # print()
-        file.write(out + "\n\n\n\n")
-
+for i, v in enumerate(SEARCH_DATASET, start=0):
+    v["text"] = (
+        unicodedata.normalize("NFKD", v["text"].strip())
+        .encode("ascii", "ignore")
+        .decode()
+        .replace("  ", " ")
+    )
+    response = complete_prompt(v, prompt_template, gaslight)
+    response = response.replace("</", "<").replace("<definition>", "")
+    v['llm'] = response
+    if v['id'] in [
+        # 'Q22909116',
+        # 'Q1151299',
+        # 'Q63437015', 'Q55418044', 'Q5339301', 'Q23118', 'Q48485', 'Q528974',
+        # 'Q63437015', 'Q55418044', 'Q5339301', 'Q528974', 'Q33602', 'Q22909116', 'Q536118',
+        'Q63437015', 'Q5339301', 'Q22909116', 'Q33602', 'Q536118',
+        # 'Q63437015', 'Q215144', 'Q1348417;Q19', 'Q55418044', 'Q5339301', 'Q728', 'Q848706', 'Q23118', 'Q48485',
+        # 'Q63437015', 'Q215144', 'Q1348417;Q19', 'Q19308', 'Q19308', 'Q131219', 'Q55418044', 'Q5339301', 'Q11020', 'Q22909116', 'Q848706', 'Q19357667', 'Q48485',
+        # 'Q63437015', 'Q215144', 'Q19308', 'Q107789646', 'Q242468', 'Q193432', 'Q46513625', 'Q22909116', 'Q43', 'Q848706', 'Q708', 'Q19357667', 'Q48485', 'Q366791',
+    ]:
+        print(str([i, v['id'], v['name'], response])[1:-1])
+        # print(v)
+print()
